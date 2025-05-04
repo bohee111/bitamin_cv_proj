@@ -120,21 +120,35 @@ def main():
     for dataset_name in dataset_query.metadata["dataset"].unique():
         query_subset = dataset_query.get_subset(dataset_query.metadata["dataset"] == dataset_name)
 
-        # Apply per-dataset strategy: adjust threshold for LynxID2025
-        threshold = THRESHOLD
-        if dataset_name == "LynxID2025":
-            # 시라소니 전략
-            threshold = 0.35
-        elif dataset_name == "SeaTurtleID2022":
-            # 바다거북 전략
-            threshold = 0.35
-        elif dataset_name == "SalamanderID2025":
-            # 도롱뇽 전략
-            threshold = 0.35
+        # Step 1. global similarity (MegaDescriptor)
+        similarity_global = matcher_mega(query_subset, dataset_db)
 
-        similarity = fusion(query_subset, dataset_db, B=25)
-        pred_idx = similarity.argsort(axis=1)[:, -1]
-        pred_scores = similarity[np.arange(len(query_subset)), pred_idx]
+        # Step 2. Top-K index만 local matching
+        K = 25
+        topk_indices = similarity_global.argsort(axis=1)[:, -K:]
+
+        # Step 3. local similarity 계산 (Top-K 내에서만)
+        similarity_local = np.zeros_like(similarity_global)
+        for i in range(len(query_subset)):
+            q = query_subset[i]
+            db_topk = dataset_db.get_subset(topk_indices[i])
+            local_scores = matcher_aliked([q], db_topk)
+            local_scores = matcher_aliked([q], db_topk)
+
+            # local_scores shape이 (1, K)일 수도, (K,)일 수도 있으므로 robust하게 처리
+            if local_scores.ndim == 2:
+                similarity_local[i, topk_indices[i]] = local_scores[0]
+            else:
+                similarity_local[i, topk_indices[i]] = local_scores
+
+
+        # Step 4. Fusion score = weighted sum
+        ALPHA = 0.7  # global의 비중이 더 큼
+        fusion_score = ALPHA * similarity_global + (1 - ALPHA) * similarity_local
+
+        # Step 5. 예측
+        pred_idx = fusion_score.argsort(axis=1)[:, -1]
+        pred_scores = fusion_score[np.arange(len(query_subset)), pred_idx]
 
         labels = dataset_db.labels_string
         predictions = labels[pred_idx].copy()
@@ -142,6 +156,7 @@ def main():
 
         predictions_all.extend(predictions)
         image_ids_all.extend(query_subset.metadata["image_id"])
+
 
     # 7. Save to CSV
     import pandas as pd
