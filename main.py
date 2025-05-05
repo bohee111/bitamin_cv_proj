@@ -17,6 +17,9 @@ import torchvision.transforms as T
 import kornia
 from PIL import Image
 
+from wildlife_tools.features import DeepFeatures
+import torch.nn.functional as F
+
 # 📁 경로 설정 (ROOT는 config.py에서 import됨)
 PROCESSED_DIR = os.path.join(ROOT, "processed")
 METADATA_PATH = os.path.join(ROOT, "metadata.csv")
@@ -109,6 +112,9 @@ def main():
     matcher_mega = build_megadescriptor(model=model, transform=transform, device=DEVICE)
     matcher_aliked = build_aliked(transform=transforms_aliked, device=DEVICE)
 
+    db_feats = matcher_mega.extractor(dataset_db)
+    db_feats = F.normalize(db_feats, dim=-1)
+
     # 4. Build fusion model and apply calibration
     fusion = build_wildfusion(matcher_aliked, matcher_mega, dataset_calib, dataset_calib)
 
@@ -120,8 +126,22 @@ def main():
     for dataset_name in dataset_query.metadata["dataset"].unique():
         query_subset = dataset_query.get_subset(dataset_query.metadata["dataset"] == dataset_name)
 
+        query_feats = matcher_mega.extractor(query_subset)
+        query_feats = F.normalize(query_feats, dim=-1)
+        
         # Step 1. global similarity (MegaDescriptor)
-        similarity_global = matcher_mega(query_subset, dataset_db)
+        # 기존 global similarity (Top-1 index 찾기용)
+        similarity_init = query_feats @ db_feats.T
+        top1_idx = similarity_init.argmax(dim=1)
+
+        # Query Expansion: query_feats + top1 db feature
+        qe_query_feats = query_feats.clone()
+        for i in range(len(query_feats)):
+            top1_db_feat = db_feats[top1_idx[i]]
+            qe_query_feats[i] = F.normalize(query_feats[i] + top1_db_feat, dim=-1)
+
+        # Query Expansion 적용한 feature로 다시 similarity 계산
+        similarity_global = qe_query_feats @ db_feats.T
 
         # Step 2. Top-K index만 local matching
         K = 25
@@ -132,7 +152,6 @@ def main():
         for i in range(len(query_subset)):
             q = query_subset[i]
             db_topk = dataset_db.get_subset(topk_indices[i])
-            local_scores = matcher_aliked([q], db_topk)
             local_scores = matcher_aliked([q], db_topk)
 
             # local_scores shape이 (1, K)일 수도, (K,)일 수도 있으므로 robust하게 처리
