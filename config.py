@@ -8,6 +8,8 @@ import os
 # ROOT = r"C:\Users\user\Desktop\kimdongyeon\CV_proj\bitamin_cv_proj\animal-clef-2025"
 # 보희 로컬 경로
 # root_path = "/kaggle/input/animal-clef-2025"
+# metadata_path = "/kaggle/input/animal-clef-2025/metadata.csv"
+# processed_dir = "/kaggle/working/"  # ✨ 꼭 추가하기!
 # 수아 로컬 경로
 
 # 채연 로컬 경로
