@@ -7,7 +7,7 @@ import os
 # 동연 로컬 경로
 # ROOT = r"C:\Users\user\Desktop\kimdongyeon\CV_proj\bitamin_cv_proj\animal-clef-2025"
 # 보희 로컬 경로
-
+# root_path = "/kaggle/input/animal-clef-2025"
 # 수아 로컬 경로
 
 # 채연 로컬 경로
