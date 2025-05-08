@@ -104,6 +104,8 @@ def load_datasets_by_species(root, calibration_size=100):
 
     return species_groups
 
+from src.transforms import transform  # 함수 상단에 추가
+
 def load_datasets_with_processed(root, metadata_path="metadata.csv", calibration_size=100):
     metadata = pd.read_csv(os.path.join(root, metadata_path))
     processed_dir = os.path.join(root, "processed")
@@ -112,10 +114,11 @@ def load_datasets_with_processed(root, metadata_path="metadata.csv", calibration
     df_query = metadata[metadata["split"] == "query"]
     df_calib = df_db.sample(n=min(calibration_size, len(df_db)), random_state=42)
 
-    dataset_db = PreprocessedDataset(df_db, processed_dir)
-    dataset_query = PreprocessedDataset(df_query, processed_dir)
-    dataset_calib = PreprocessedDataset(df_calib, processed_dir)
+    # 🔧 transform=transform 추가!
+    dataset_db = PreprocessedDataset(df_db, processed_dir, transform=transform)
+    dataset_query = PreprocessedDataset(df_query, processed_dir, transform=transform)
+    dataset_calib = PreprocessedDataset(df_calib, processed_dir, transform=transform)
 
-    # 전체 메타데이터 포함한 Dataset도 반환 가능 (필요하면)
     return metadata, dataset_db, dataset_query, dataset_calib
+
 
