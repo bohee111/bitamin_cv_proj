@@ -5,6 +5,33 @@ from torchvision.transforms import functional as TF
 '''
 AnimalCLEF2025 로드하고, query/database/calibration 분리까지 담당
 '''
+
+class PreprocessedDataset(torch.utils.data.Dataset):
+    def __init__(self, metadata: pd.DataFrame, image_dir: str, transform=None):
+        self.metadata = metadata.reset_index(drop=True)
+        self.image_dir = image_dir
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.metadata)
+
+    def __getitem__(self, idx):
+        row = self.metadata.iloc[idx]
+        image_id = row["image_id"]
+        label = row.get("identity", "unknown")
+
+        img_path = os.path.join(self.image_dir, f"{image_id}.png")
+        image = Image.open(img_path).convert("RGB")
+        if self.transform:
+            image = self.transform(image)
+
+        return {
+            "image": image,
+            "label": label,
+            "image_id": image_id,
+            "dataset": row["dataset"]
+        }
+
 def salamander_orientation_transform(image, metadata):
     # Only apply to SalamanderID2025 dataset
     if metadata.get("dataset") == "SalamanderID2025":
@@ -72,3 +99,19 @@ def load_datasets_by_species(root, calibration_size=100):
         }
 
     return species_groups
+
+def load_datasets_with_processed(root, metadata_path="metadata.csv", calibration_size=100):
+    metadata = pd.read_csv(os.path.join(root, metadata_path))
+    processed_dir = os.path.join(root, "processed")
+
+    df_db = metadata[metadata["split"] == "database"]
+    df_query = metadata[metadata["split"] == "query"]
+    df_calib = df_db.sample(n=min(calibration_size, len(df_db)), random_state=42)
+
+    dataset_db = PreprocessedDataset(df_db, processed_dir)
+    dataset_query = PreprocessedDataset(df_query, processed_dir)
+    dataset_calib = PreprocessedDataset(df_calib, processed_dir)
+
+    # 전체 메타데이터 포함한 Dataset도 반환 가능 (필요하면)
+    return metadata, dataset_db, dataset_query, dataset_calib
+
