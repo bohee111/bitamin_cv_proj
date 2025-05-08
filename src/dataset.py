@@ -18,19 +18,23 @@ class PreprocessedDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         row = self.metadata.iloc[idx]
         image_id = row["image_id"]
-        label = row.get("identity", "unknown")
+        split = row.get("split", "database")  # default fallback
+        img_path = os.path.join(self.image_dir, split, f"{image_id}.png")  # split 포함
 
-        img_path = os.path.join(self.image_dir, f"{image_id}.png")
         image = Image.open(img_path).convert("RGB")
         if self.transform:
             image = self.transform(image)
 
         return {
             "image": image,
-            "label": label,
+            "label": row.get("identity", "unknown"),
             "image_id": image_id,
             "dataset": row["dataset"]
         }
+
+    def get_subset(self, condition):
+        subset_metadata = self.metadata[condition].reset_index(drop=True)
+        return PreprocessedDataset(subset_metadata, self.image_dir, self.transform)
 
 def salamander_orientation_transform(image, metadata):
     # Only apply to SalamanderID2025 dataset
