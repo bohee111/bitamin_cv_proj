@@ -2,6 +2,7 @@ from config import ROOT, MEGAD_NAME, DEVICE, THRESHOLD
 from src.transforms import transform, transforms_aliked
 from src.utils import create_sample_submission
 from src.dataset import load_datasets
+from src.dataset import load_datasets_with_processed
 from src.matcher import build_megadescriptor, build_aliked
 from src.fusion import build_wildfusion
 
@@ -112,11 +113,11 @@ def run_preprocessing():
 
 
 def main():
-    run_preprocessing()
+    if not os.path.exists(os.path.join(PROCESSED_DIR, "database")):
+        run_preprocessing()
     metadata, dataset_db, dataset_query, dataset_calib = load_datasets_with_processed(ROOT)
     # 1. Load the full dataset
-    dataset, dataset_db, dataset_query, dataset_calib = load_datasets(ROOT)
-
+    
     # 2. Load MegaDescriptor model (global descriptor backbone)
     model = timm.create_model(MEGAD_NAME, num_classes=0, pretrained=True).to(DEVICE)
 
