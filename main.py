@@ -83,7 +83,17 @@ def run_preprocessing():
 
     metadata = pd.read_csv(METADATA_PATH)
     for idx, row in metadata.iterrows():
-        img_path = os.path.join(ROOT, row["path"])
+        candidate_extensions = [".jpg", ".png", ".jpeg"]
+        img_path = None
+        for ext in candidate_extensions:
+            path_try = os.path.join(ROOT, f"{row['path']}{ext}")
+            if os.path.exists(path_try):
+                img_path = path_try
+                break
+
+        if img_path is None:
+            print(f"❌ 이미지 파일을 찾을 수 없음: {row['path']}")
+            continue
         species_name = row["dataset"]
         image_id = row["image_id"]
 
