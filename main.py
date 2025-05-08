@@ -112,6 +112,8 @@ def run_preprocessing():
 
 
 def main():
+    run_preprocessing()
+    metadata, dataset_db, dataset_query, dataset_calib = load_datasets_with_processed(ROOT)
     # 1. Load the full dataset
     dataset, dataset_db, dataset_query, dataset_calib = load_datasets(ROOT)
 
@@ -131,6 +133,8 @@ def main():
     # 5. Compute predictions per query group (by dataset) but compare against full DB
     predictions_all = []
     image_ids_all = []
+
+    threshold = THRESHOLD
 
     # 6. Queary의 종별 전략을 다르게 적용해 비교
     for dataset_name in dataset_query.metadata["dataset"].unique():
@@ -155,7 +159,7 @@ def main():
 
         # Step 2. Top-K index만 local matching
         K = 25
-        topk_indices = similarity_global.argsort(axis=1)[:, -K:]
+        topk_indices = np.argsort(-similarity_global, axis=1)[:, :K]
 
         # Step 3. local similarity 계산 (Top-K 내에서만)
         similarity_local = np.zeros_like(similarity_global)
@@ -179,7 +183,7 @@ def main():
         pred_idx = fusion_score.argsort(axis=1)[:, -1]
         pred_scores = fusion_score[np.arange(len(query_subset)), pred_idx]
 
-        labels = dataset_db.labels_string
+        labels = np.array(dataset_db.labels_string)
         predictions = labels[pred_idx].copy()
         predictions[pred_scores < threshold] = 'new_individual'
 
