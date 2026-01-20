@@ -29,10 +29,10 @@ def load_datasets(root, calibration_size=1000):
     if str(rootp).startswith("/kaggle/input"):
         pass
     else:
-        SRC = Path("/kaggle/input/parkbohee/AnimalCLEF2025-main/dataset")
-        if (not rootp.exists()) or (not any(rootp.iterdir())):
-            rootp.mkdir(parents=True, exist_ok=True)
-            shutil.copytree(SRC, rootp, dirs_exist_ok=True)
+        #SRC = Path("/kaggle/input/parkbohee/AnimalCLEF2025-main/dataset")
+        #if (not rootp.exists()) or (not any(rootp.iterdir())):
+        #    rootp.mkdir(parents=True, exist_ok=True)
+        #    shutil.copytree(SRC, rootp, dirs_exist_ok=True)
         root = str(rootp)  # 안전하게 문자열로 고정
 
     dataset = AnimalCLEF2025(root, load_label=True, transform=salamander_orientation_transform)
