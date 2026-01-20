@@ -1,4 +1,4 @@
-from config import ROOT, MEGAD_NAME, DEVICE, THRESHOLD
+from config import ROOT, MEGAD_NAME, DEVICE, THRESHOLD, OUT_DIR
 from src.transforms import transforms_aliked, transform_tta_mega
 from src.dataset import load_datasets
 from src.fusion import build_wildfusion
@@ -96,9 +96,10 @@ def main():
 
     # 7. Save to CSV
     import pandas as pd
-    df = pd.DataFrame({"image_id": image_ids_all, "identity": predictions_all})
-    df.to_csv("sample_submission.csv", index=False)
-    print("✅ sample_submission.csv saved!")
+    os.makedirs(OUT_DIR, exist_ok=True)
+    out_path = os.path.join(OUT_DIR, "sample_submission.csv")
+    df.to_csv(out_path, index=False)
+    print("✅ saved:", out_path)
 
 
 if __name__ == '__main__':
