@@ -2,7 +2,6 @@ from wildlife_datasets.datasets import AnimalCLEF2025
 import pandas as pd
 from torchvision.transforms import functional as TF
 from pathlib import Path
-from pathlib import Path
 import shutil, os
 
 '''
@@ -24,26 +23,17 @@ def salamander_orientation_transform(image, metadata):
 
 def load_datasets(root, calibration_size=1000):
     rootp = Path(root)
+    if (not rootp.exists()) or (not any(rootp.iterdir())):
+        AnimalCLEF2025.get_data(str(rootp))  # <-- working에 다운로드/설치
 
-    # /kaggle/input 은 read-only지만 읽기는 가능 → 복사하지 말 것
-    if str(rootp).startswith("/kaggle/input"):
-        pass
-    else:
-        #SRC = Path("/kaggle/input/parkbohee/AnimalCLEF2025-main/dataset")
-        #if (not rootp.exists()) or (not any(rootp.iterdir())):
-        #    rootp.mkdir(parents=True, exist_ok=True)
-        #    shutil.copytree(SRC, rootp, dirs_exist_ok=True)
-        root = str(rootp)  # 안전하게 문자열로 고정
-
+    root = str(rootp)  # 안전
     dataset = AnimalCLEF2025(root, load_label=True, transform=salamander_orientation_transform)
-
     dataset_database = dataset.get_subset(dataset.metadata['split'] == 'database')
     dataset_query = dataset.get_subset(dataset.metadata['split'] == 'query')
 
     calib_meta = dataset_database.metadata[:calibration_size].copy()
-    dataset_calibration = AnimalCLEF2025(
-        root, df=calib_meta, load_label=True, transform=salamander_orientation_transform
-    )
+    dataset_calibration = AnimalCLEF2025(root, df=calib_meta, load_label=True, transform=salamander_orientation_transform)
+
     return dataset, dataset_database, dataset_query, dataset_calibration
 
 
