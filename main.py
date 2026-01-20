@@ -69,8 +69,8 @@ def main():
 
         # 4) 가중 평균 (또는 향후 MLP)
         # 임시 가중치: fusion을 메인으로 두고, EVA02/DINOv3를 보조 prior로 사용
-        # combined_sim = 0.6 * sim_fusion + 0.2 * sim_eva + 0.2 * sim_dino
-        combined_sim = sim_fusion
+        combined_sim = 0.6 * sim_fusion + 0.2 * sim_eva + 0.2 * sim_dino
+        # combined_sim = sim_fusion
 
         # --- 이후 모든 idx / score 계산을 combined_sim 기준으로 ---
         idx_sorted = combined_sim.argsort(axis=1)
