@@ -2,6 +2,8 @@ from wildlife_datasets.datasets import AnimalCLEF2025
 import pandas as pd
 from torchvision.transforms import functional as TF
 from pathlib import Path
+from pathlib import Path
+import shutil, os
 
 '''
 AnimalCLEF2025 로드하고, query/database/calibration 분리까지 담당
@@ -22,8 +24,15 @@ def salamander_orientation_transform(image, metadata):
 
 def load_datasets(root, calibration_size=1000):
     rootp = Path(root)
-    if not rootp.exists():
-        AnimalCLEF2025.get_data(root)
+
+    # Kaggle input에 있는 데이터 위치(너 지금 상황 기준)
+    SRC = Path("/kaggle/input/parkbohee/AnimalCLEF2025-main/dataset")
+    
+    # working에 데이터가 없으면 1회 복사
+    if (not rootp.exists()) or (not any(rootp.iterdir())):
+        rootp.mkdir(parents=True, exist_ok=True)
+        # dataset 폴더를 통째로 복사 (시간 좀 걸릴 수 있음)
+        shutil.copytree(SRC, rootp, dirs_exist_ok=True)
 
     dataset = AnimalCLEF2025(root, load_label=True, transform=salamander_orientation_transform)
 
