@@ -25,14 +25,15 @@ def salamander_orientation_transform(image, metadata):
 def load_datasets(root, calibration_size=1000):
     rootp = Path(root)
 
-    # Kaggle input에 있는 데이터 위치(너 지금 상황 기준)
-    SRC = Path("/kaggle/input/parkbohee/AnimalCLEF2025-main/dataset")
-    
-    # working에 데이터가 없으면 1회 복사
-    if (not rootp.exists()) or (not any(rootp.iterdir())):
-        rootp.mkdir(parents=True, exist_ok=True)
-        # dataset 폴더를 통째로 복사 (시간 좀 걸릴 수 있음)
-        shutil.copytree(SRC, rootp, dirs_exist_ok=True)
+    # /kaggle/input 은 read-only지만 읽기는 가능 → 복사하지 말 것
+    if str(rootp).startswith("/kaggle/input"):
+        pass
+    else:
+        SRC = Path("/kaggle/input/parkbohee/AnimalCLEF2025-main/dataset")
+        if (not rootp.exists()) or (not any(rootp.iterdir())):
+            rootp.mkdir(parents=True, exist_ok=True)
+            shutil.copytree(SRC, rootp, dirs_exist_ok=True)
+        root = str(rootp)  # 안전하게 문자열로 고정
 
     dataset = AnimalCLEF2025(root, load_label=True, transform=salamander_orientation_transform)
 
