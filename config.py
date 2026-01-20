@@ -5,9 +5,8 @@ import os
     define your root directory
 '''
 # config.py
-ROOT = "/kaggle/working/dataset"
+ROOT = "/kaggle/input/parkbohee/AnimalCLEF2025-main/dataset"
 OUT_DIR = "/kaggle/working/out"
-
 DEVICE = "cuda"
 
 # Model settings
